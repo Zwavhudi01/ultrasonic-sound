@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stage 3: Admin Dashboard | Ultrasonic Positioning</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #0a0e27;
+            color: #e2e8f0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: #0f172a;
+            border-bottom: 1px solid #1e293b;
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            background: linear-gradient(90deg, #10b981, #34d399);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .stage-badge {
+            background: #10b98120;
+            color: #10b981;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border: 1px solid #10b98140;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 15px;
+        }
+
+        .nav-links a {
+            color: #64748b;
+            text-decoration: none;
+            font-size: 0.85rem;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            background: #1e293b;
+            color: #e2e8f0;
+        }
+
+        .main {
+            flex: 1;
+            padding: 30px 40px;
+            max-width: 1400px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            border-radius: 16px;
+            padding: 25px;
+            text-align: center;
+            transition: transform 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .stat-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .stat-value {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: #10b981;
+        }
+
+        .stat-value.alert {
+            color: #ef4444;
+            animation: pulse-alert 1s ease-in-out infinite;
+        }
+
+        @keyframes pulse-alert {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-top: 6px;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+        }
+
+        .panel {
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            border-radius: 16px;
+            padding: 25px;
+        }
+
+        .panel-title {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #64748b;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .panel-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: #64748b;
+            border: 1px solid #334155;
+        }
+
+        .btn-outline:hover {
+            background: #1e293b;
+            color: #e2e8f0;
+        }
+
+        .alert-feed {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .alert-item {
+            background: #1e293b;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 4px solid #10b981;
+            animation: slideIn 0.4s ease-out;
+            transition: all 0.2s;
+        }
+
+        .alert-item:hover {
+            background: #252f47;
+        }
+
+        .alert-item.new {
+            border-left-color: #f59e0b;
+            background: #f59e0b10;
+        }
+
+        .alert-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .alert-time {
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+
+        .alert-badge {
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .alert-badge.match {
+            background: #10b98120;
+            color: #10b981;
+        }
+
+        .alert-body {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .info-block {
+            background: #0f172a;
+            border-radius: 8px;
+            padding: 12px;
+        }
+
+        .info-label {
+            font-size: 0.7rem;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 6px;
+        }
+
+        .info-value {
+            font-size: 0.9rem;
+            color: #e2e8f0;
+            font-weight: 500;
+        }
+
+        .info-value.highlight {
+            color: #10b981;
+            font-weight: 700;
+        }
+
+        .info-value.location {
+            font-family: 'Courier New', monospace;
+            color: #60a5fa;
+        }
+
+        .map-placeholder {
+            height: 350px;
+            background: radial-gradient(circle at 50% 50%, #1e293b 0%, #0f172a 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .map-grid {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(51, 65, 85, 0.3) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(51, 65, 85, 0.3) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        .map-point {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: #10b981;
+            border-radius: 50%;
+            border: 3px solid #0f172a;
+            box-shadow: 0 0 20px #10b98160;
+            animation: point-pulse 2s ease-in-out infinite;
+            transform: translate(-50%, -50%);
+        }
+
+        @keyframes point-pulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.3); }
+        }
+
+        .map-label {
+            position: absolute;
+            background: rgba(15, 23, 42, 0.9);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            color: #e2e8f0;
+            white-space: nowrap;
+            transform: translate(-50%, -140%);
+            border: 1px solid #334155;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #64748b;
+        }
+
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .history-table th {
+            text-align: left;
+            padding: 12px;
+            font-size: 0.75rem;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid #1e293b;
+        }
+
+        .history-table td {
+            padding: 12px;
+            font-size: 0.85rem;
+            border-bottom: 1px solid #1e293b;
+        }
+
+        .history-table tr:hover td {
+            background: #1e293b;
+        }
+
+        .status-pill {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .status-pill.received {
+            background: #3b82f620;
+            color: #3b82f6;
+        }
+
+        .status-pill.processed {
+            background: #10b98120;
+            color: #10b981;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 1024px) {
+            .dashboard-grid { grid-template-columns: repeat(2, 1fr); }
+            .content-grid { grid-template-columns: 1fr; }
+            .header { flex-direction: column; gap: 15px; }
+            .alert-body { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 640px) {
+            .dashboard-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+<base target="_blank">
+</head>
+<body>
+    <header class="header">
+        <h1>📊 Stage 3: Admin Dashboard</h1>
+        <div style="display: flex; align-items: center; gap: 20px;">
+            <span class="stage-badge">DEVICE C</span>
+            <nav class="nav-links">
+                <a href="transmitter.html">Transmitter</a>
+                <a href="receiver.html">Receiver</a>
+                <a href="admin.html" class="active">Admin</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="dashboard-grid">
+            <div class="stat-card">
+                <div class="stat-icon">📡</div>
+                <div class="stat-value" id="totalSignals">0</div>
+                <div class="stat-label">Total Signals</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">✓</div>
+                <div class="stat-value" id="totalMatches">0</div>
+                <div class="stat-label">Pattern Matches</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">👤</div>
+                <div class="stat-value" id="activeUsers">0</div>
+                <div class="stat-label">Active Receivers</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🔔</div>
+                <div class="stat-value alert" id="newAlerts">0</div>
+                <div class="stat-label">New Alerts</div>
+            </div>
+        </div>
+
+        <div class="content-grid">
+            <div class="panel">
+                <div class="panel-title">
+                    <span>🚨 Live Pattern Match Alerts</span>
+                    <div class="panel-actions">
+                        <button class="btn-small btn-outline" onclick="markAllRead()">Mark Read</button>
+                        <button class="btn-small btn-outline" onclick="clearAll()">Clear All</button>
+                    </div>
+                </div>
+                <div class="alert-feed" id="alertFeed">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📭</div>
+                        <div>No pattern matches yet</div>
+                        <div style="font-size: 0.8rem; margin-top: 8px;">Waiting for Device B to match code 12345...</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title">
+                    <span>🗺️ Receiver Locations</span>
+                    <div class="panel-actions">
+                        <button class="btn-small btn-outline" onclick="refreshMap()">Refresh</button>
+                    </div>
+                </div>
+                <div class="map-placeholder" id="mapContainer">
+                    <div class="map-grid"></div>
+                    <div style="color: #64748b; z-index: 10;">No location data available</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel" style="margin-top: 25px;">
+            <div class="panel-title">
+                <span>📋 Complete Signal History</span>
+                <div class="panel-actions">
+                    <button class="btn-small btn-outline" onclick="exportData()">📥 Export</button>
+                    <button class="btn-small btn-outline" onclick="clearHistory()">Clear</button>
+                </div>
+            </div>
+            <div style="overflow-x: auto;">
+                <table class="history-table" id="historyTable">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Signal Code</th>
+                            <th>Pattern</th>
+                            <th>Receiver</th>
+                            <th>Location</th>
+                            <th>Role</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyBody">
+                        <tr>
+                            <td colspan="7" style="text-align: center; color: #64748b; padding: 40px;">
+                                No history records
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script src="shared-state.js"></script>
+    <script>
+        let totalSignals = 0;
+        let totalMatches = 0;
+        let newAlerts = 0;
+        let activeReceivers = new Set();
+        let alertHistory = [];
+        let locationPoints = [];
+
+        sharedState.subscribe((data) => {
+            if (data.type === SIGNAL_TYPES.PING) {
+                totalSignals++;
+                document.getElementById('totalSignals').textContent = totalSignals;
+            }
+
+            if (data.type === SIGNAL_TYPES.PATTERN_MATCH) {
+                handlePatternMatch(data);
+            }
+        });
+
+        loadHistory();
+
+        function handlePatternMatch(data) {
+            totalMatches++;
+            newAlerts++;
+
+            const receiverId = data.receiverInfo?.userId || 'unknown';
+            activeReceivers.add(receiverId);
+
+            document.getElementById('totalMatches').textContent = totalMatches;
+            document.getElementById('newAlerts').textContent = newAlerts;
+            document.getElementById('activeUsers').textContent = activeReceivers.size;
+
+            addAlert(data);
+            addToHistoryTable(data);
+            addLocationPoint(data);
+        }
+
+        function addAlert(data) {
+            const feed = document.getElementById('alertFeed');
+            const time = new Date().toLocaleTimeString();
+
+            if (feed.querySelector('.empty-state')) {
+                feed.innerHTML = '';
+            }
+
+            const alertEl = document.createElement('div');
+            alertEl.className = 'alert-item new';
+            alertEl.innerHTML = `
+                <div class="alert-header">
+                    <div>
+                        <div style="font-weight: 700; color: #10b981; margin-bottom: 4px;">
+                            ✓ PATTERN MATCH DETECTED
+                        </div>
+                        <div class="alert-time">${time} | Signal ID: ${data.originalSignal?.id || 'N/A'}</div>
+                    </div>
+                    <span class="alert-badge match">VERIFIED</span>
+                </div>
+                <div class="alert-body">
+                    <div class="info-block">
+                        <div class="info-label">📡 Signal Source</div>
+                        <div class="info-value">${data.originalSignal?.source || 'Unknown'}</div>
+                        <div style="font-size: 0.8rem; color: #64748b; margin-top: 4px;">
+                            Code: <span class="highlight">${data.originalSignal?.code || 'N/A'}</span>
+                        </div>
+                    </div>
+                    <div class="info-block">
+                        <div class="info-label">👤 Receiver Account</div>
+                        <div class="info-value">${data.receiverInfo?.userName || 'Unknown'}</div>
+                        <div style="font-size: 0.8rem; color: #64748b; margin-top: 4px;">
+                            ID: ${data.receiverInfo?.userId || 'N/A'}
+                        </div>
+                    </div>
+                    <div class="info-block">
+                        <div class="info-label">📍 Location Pin</div>
+                        <div class="info-value location">${data.receiverInfo?.location || 'Unknown'}</div>
+                        <div style="font-size: 0.8rem; color: #64748b; margin-top: 4px;">
+                            Role: ${data.receiverInfo?.role || 'N/A'}
+                        </div>
+                    </div>
+                    <div class="info-block">
+                        <div class="info-label">🔍 Match Details</div>
+                        <div class="info-value">Pattern: <span class="highlight">${data.pattern}</span></div>
+                        <div style="font-size: 0.8rem; color: #64748b; margin-top: 4px;">
+                            Matched at: ${new Date(data.receiverInfo?.matchedAt).toLocaleTimeString() || time}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            feed.insertBefore(alertEl, feed.firstChild);
+
+            setTimeout(() => {
+                alertEl.classList.remove('new');
+            }, 5000);
+
+            if (feed.children.length > 10) {
+                feed.removeChild(feed.lastChild);
+            }
+
+            alertHistory.unshift(data);
+        }
+
+        function addToHistoryTable(data) {
+            const tbody = document.getElementById('historyBody');
+
+            if (tbody.querySelector('td[colspan]')) {
+                tbody.innerHTML = '';
+            }
+
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${new Date().toLocaleString()}</td>
+                <td><code style="background: #1e293b; padding: 2px 6px; border-radius: 4px;">${data.originalSignal?.code || 'N/A'}</code></td>
+                <td><span style="color: #10b981; font-weight: 600;">${data.pattern}</span></td>
+                <td>
+                    <div style="font-weight: 500;">${data.receiverInfo?.userName || 'Unknown'}</div>
+                    <div style="font-size: 0.75rem; color: #64748b;">${data.receiverInfo?.userId || ''}</div>
+                </td>
+                <td style="font-family: monospace; color: #60a5fa;">${data.receiverInfo?.location || 'N/A'}</td>
+                <td>${data.receiverInfo?.role || 'N/A'}</td>
+                <td><span class="status-pill processed">PROCESSED</span></td>
+            `;
+
+            tbody.insertBefore(row, tbody.firstChild);
+
+            if (tbody.children.length > 50) {
+                tbody.removeChild(tbody.lastChild);
+            }
+        }
+
+        function addLocationPoint(data) {
+            const container = document.getElementById('mapContainer');
+            const location = data.receiverInfo?.location || 'Unknown';
+
+            if (container.querySelector('div[style*="z-index: 10"]')) {
+                container.querySelector('div[style*="z-index: 10"]').remove();
+            }
+
+            const hash = location.split('').reduce((a, b) => {
+                a = ((a << 5) - a) + b.charCodeAt(0);
+                return a & a;
+            }, 0);
+
+            const x = 15 + (Math.abs(hash) % 70);
+            const y = 15 + (Math.abs(hash >> 8) % 70);
+
+            const point = document.createElement('div');
+            point.className = 'map-point';
+            point.style.left = x + '%';
+            point.style.top = y + '%';
+
+            const label = document.createElement('div');
+            label.className = 'map-label';
+            label.textContent = data.receiverInfo?.userName || 'User';
+            label.style.left = x + '%';
+            label.style.top = y + '%';
+
+            container.appendChild(point);
+            container.appendChild(label);
+
+            locationPoints.push({ point, label, data });
+
+            if (locationPoints.length > 20) {
+                const old = locationPoints.shift();
+                old.point.remove();
+                old.label.remove();
+            }
+        }
+
+        function loadHistory() {
+            const history = sharedState.getSignalHistory();
+            history.forEach(item => {
+                if (item.type === SIGNAL_TYPES.PATTERN_MATCH) {
+                    addToHistoryTable(item);
+                }
+            });
+        }
+
+        function markAllRead() {
+            newAlerts = 0;
+            document.getElementById('newAlerts').textContent = '0';
+            document.querySelectorAll('.alert-item.new').forEach(el => {
+                el.classList.remove('new');
+            });
+        }
+
+        function clearAll() {
+            document.getElementById('alertFeed').innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">📭</div>
+                    <div>No pattern matches yet</div>
+                    <div style="font-size: 0.8rem; margin-top: 8px;">Waiting for Device B to match code 12345...</div>
+                </div>
+            `;
+            newAlerts = 0;
+            document.getElementById('newAlerts').textContent = '0';
+        }
+
+        function clearHistory() {
+            sharedState.clearHistory();
+            document.getElementById('historyBody').innerHTML = `
+                <tr>
+                    <td colspan="7" style="text-align: center; color: #64748b; padding: 40px;">
+                        No history records
+                    </td>
+                </tr>
+            `;
+        }
+
+        function refreshMap() {
+            const container = document.getElementById('mapContainer');
+            container.innerHTML = '<div class="map-grid"></div>';
+            locationPoints = [];
+        }
+
+        function exportData() {
+            const history = sharedState.getSignalHistory();
+            const dataStr = JSON.stringify(history, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `signal-history-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>

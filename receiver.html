@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stage 2: Receiver | Ultrasonic Positioning</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #0a0e27;
+            color: #e2e8f0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: #0f172a;
+            border-bottom: 1px solid #1e293b;
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            background: linear-gradient(90deg, #3b82f6, #60a5fa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .stage-badge {
+            background: #3b82f620;
+            color: #3b82f6;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border: 1px solid #3b82f640;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 15px;
+        }
+
+        .nav-links a {
+            color: #64748b;
+            text-decoration: none;
+            font-size: 0.85rem;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            background: #1e293b;
+            color: #e2e8f0;
+        }
+
+        .main {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 30px;
+            padding: 30px 40px;
+            max-width: 1400px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .panel {
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            border-radius: 16px;
+            padding: 25px;
+        }
+
+        .panel-title {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #64748b;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .receiver-visual {
+            height: 400px;
+            background: radial-gradient(circle at 50% 50%, #1e293b 0%, #0f172a 100%);
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .receiver-core {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            position: relative;
+            z-index: 10;
+            box-shadow: 0 0 40px #3b82f640;
+            transition: all 0.3s;
+        }
+
+        .receiver-core.listening {
+            animation: pulse-listen 2s ease-in-out infinite;
+        }
+
+        .receiver-core.matched {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            box-shadow: 0 0 60px #22c55e60;
+            animation: pulse-match 0.5s ease-in-out 3;
+        }
+
+        @keyframes pulse-listen {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 40px #3b82f640; }
+            50% { transform: scale(1.03); box-shadow: 0 0 50px #3b82f650; }
+        }
+
+        @keyframes pulse-match {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+
+        .signal-wave {
+            position: absolute;
+            border: 2px solid #3b82f6;
+            border-radius: 50%;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .signal-wave.incoming {
+            animation: wave-incoming 1s ease-out forwards;
+        }
+
+        @keyframes wave-incoming {
+            0% { width: 300px; height: 300px; opacity: 0.3; border-color: #ef4444; }
+            100% { width: 80px; height: 80px; opacity: 0; border-color: #3b82f6; }
+        }
+
+        .monitor-screen {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid #1e293b;
+            border-radius: 12px;
+            padding: 15px 25px;
+            min-width: 300px;
+            text-align: center;
+        }
+
+        .monitor-label {
+            font-size: 0.7rem;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 8px;
+        }
+
+        .monitor-value {
+            font-family: 'Courier New', monospace;
+            font-size: 1.4rem;
+            color: #3b82f6;
+            min-height: 1.6rem;
+        }
+
+        .monitor-value.match {
+            color: #22c55e;
+            font-weight: 700;
+        }
+
+        .monitor-value.nomatch {
+            color: #ef4444;
+        }
+
+        .pattern-config {
+            background: #1e293b;
+            border: 2px solid #334155;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            font-family: 'Courier New', monospace;
+            font-size: 1.8rem;
+            letter-spacing: 0.3em;
+            color: #3b82f6;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.8rem;
+            color: #94a3b8;
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            background: #1e293b;
+            border: 1px solid #334155;
+            color: #e2e8f0;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+
+        .filter-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 15px;
+            background: #1e293b;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .filter-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #22c55e;
+            animation: blink 2s infinite;
+        }
+
+        .filter-dot.off {
+            background: #64748b;
+            animation: none;
+        }
+
+        .filter-text {
+            font-size: 0.85rem;
+            color: #94a3b8;
+        }
+
+        .filter-text strong {
+            color: #22c55e;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 20px #3b82f640;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            color: white;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 20px #22c55e40;
+        }
+
+        .stats-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .stat-item {
+            background: #1e293b;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #3b82f6;
+        }
+
+        .stat-value.match {
+            color: #22c55e;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: #64748b;
+            margin-top: 4px;
+        }
+
+        .log-feed {
+            margin-top: 20px;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        .log-item {
+            padding: 12px;
+            background: #1e293b;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            font-size: 0.8rem;
+            border-left: 3px solid #334155;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .log-item.matched {
+            border-left-color: #22c55e;
+            background: #22c55e10;
+        }
+
+        .log-item.filtered {
+            border-left-color: #ef4444;
+            opacity: 0.6;
+        }
+
+        .log-time {
+            color: #64748b;
+            font-size: 0.7rem;
+            margin-bottom: 4px;
+        }
+
+        .log-code {
+            font-family: 'Courier New', monospace;
+            font-weight: 700;
+            font-size: 0.95rem;
+        }
+
+        .log-status {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
+        .log-status.match {
+            background: #22c55e20;
+            color: #22c55e;
+        }
+
+        .log-status.filter {
+            background: #ef444420;
+            color: #ef4444;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        @media (max-width: 1024px) {
+            .main { grid-template-columns: 1fr; }
+            .header { flex-direction: column; gap: 15px; }
+        }
+    </style>
+<base target="_blank">
+</head>
+<body>
+    <header class="header">
+        <h1>👂 Stage 2: Receiver / Monitor</h1>
+        <div style="display: flex; align-items: center; gap: 20px;">
+            <span class="stage-badge">DEVICE B</span>
+            <nav class="nav-links">
+                <a href="transmitter.html">Transmitter</a>
+                <a href="receiver.html" class="active">Receiver</a>
+                <a href="admin.html">Admin</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main">
+        <div>
+            <div class="panel">
+                <div class="panel-title">📡 Signal Monitor</div>
+                <div class="receiver-visual" id="visualContainer">
+                    <div class="signal-wave" id="incomingWave"></div>
+                    <div class="receiver-core listening" id="receiverCore">👂</div>
+                    <div class="monitor-screen">
+                        <div class="monitor-label">Incoming Signal</div>
+                        <div class="monitor-value" id="monitorValue">Listening...</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel" style="margin-top: 20px;">
+                <div class="panel-title">📊 Reception Log</div>
+                <div class="log-feed" id="receptionLog">
+                    <div style="color: #64748b; text-align: center; padding: 20px;">Waiting for signals...</div>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <div class="panel">
+                <div class="panel-title">⚙️ Pattern Matching Configuration</div>
+
+                <div class="form-group">
+                    <label>Target Pattern to Match</label>
+                    <div class="pattern-config" id="patternConfig">12345</div>
+                </div>
+
+                <div class="form-group">
+                    <label>Set Target Pattern</label>
+                    <input type="text" id="targetPattern" value="12345" maxlength="10" placeholder="Enter pattern...">
+                </div>
+
+                <div class="filter-status" id="filterStatus">
+                    <div class="filter-dot" id="filterDot"></div>
+                    <div class="filter-text">
+                        Filtering: Only pass signals matching <strong id="filterPattern">12345</strong>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Receiver Location</label>
+                    <input type="text" id="rxLocation" value="Building A, Floor 3, Room 302" placeholder="Enter your location...">
+                </div>
+
+                <div class="form-group">
+                    <label>Receiver User Name</label>
+                    <input type="text" id="rxUserName" value="Jane Smith" placeholder="Enter name...">
+                </div>
+
+                <div class="form-group">
+                    <label>Receiver User ID</label>
+                    <input type="text" id="rxUserId" value="RX-002-OPERATOR" placeholder="Enter user ID...">
+                </div>
+
+                <div class="form-group">
+                    <label>Receiver Role</label>
+                    <input type="text" id="rxRole" value="Floor Monitor" placeholder="Enter role...">
+                </div>
+
+                <button class="btn btn-primary" onclick="updatePattern()">
+                    🔄 Update Pattern
+                </button>
+
+                <div class="stats-row">
+                    <div class="stat-item">
+                        <div class="stat-value" id="receivedCount">0</div>
+                        <div class="stat-label">Total Received</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value match" id="matchedCount">0</div>
+                        <div class="stat-label">Pattern Matches</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="shared-state.js"></script>
+    <script>
+        let receivedCount = 0;
+        let matchedCount = 0;
+        let currentPattern = '12345';
+
+        sharedState.subscribe((data) => {
+            if (data.type === SIGNAL_TYPES.PING) {
+                handleIncomingSignal(data);
+            }
+        });
+
+        function handleIncomingSignal(signal) {
+            receivedCount++;
+            document.getElementById('receivedCount').textContent = receivedCount;
+
+            const isMatch = signal.code === currentPattern;
+
+            animateIncomingSignal();
+            updateMonitor(signal.code, isMatch);
+            addToLog(signal, isMatch);
+
+            if (isMatch) {
+                matchedCount++;
+                document.getElementById('matchedCount').textContent = matchedCount;
+
+                forwardToAdmin(signal);
+
+                setTimeout(() => {
+                    const core = document.getElementById('receiverCore');
+                    core.classList.remove('listening');
+                    core.classList.add('matched');
+                    core.textContent = '✓';
+
+                    setTimeout(() => {
+                        core.classList.remove('matched');
+                        core.classList.add('listening');
+                        core.textContent = '👂';
+                    }, 1500);
+                }, 500);
+            }
+        }
+
+        function animateIncomingSignal() {
+            const wave = document.getElementById('incomingWave');
+            wave.classList.remove('incoming');
+            void wave.offsetWidth;
+            wave.classList.add('incoming');
+        }
+
+        function updateMonitor(code, isMatch) {
+            const monitor = document.getElementById('monitorValue');
+            monitor.textContent = code;
+            monitor.className = 'monitor-value' + (isMatch ? ' match' : ' nomatch');
+
+            if (isMatch) {
+                monitor.textContent = code + ' ✓ MATCH!';
+            }
+        }
+
+        function addToLog(signal, isMatch) {
+            const logFeed = document.getElementById('receptionLog');
+            const time = new Date().toLocaleTimeString();
+
+            const item = document.createElement('div');
+            item.className = 'log-item' + (isMatch ? ' matched' : ' filtered');
+            item.innerHTML = `
+                <div class="log-time">${time} | From: ${signal.source}</div>
+                <div class="log-code">Code: ${signal.code}</div>
+                <div style="color: #94a3b8; font-size: 0.75rem; margin-top: 4px;">
+                    ${signal.location}
+                </div>
+                <span class="log-status ${isMatch ? 'match' : 'filter'}">
+                    ${isMatch ? '✓ PATTERN MATCH - FORWARDED' : '✗ FILTERED OUT'}
+                </span>
+            `;
+
+            if (logFeed.children.length === 1 && logFeed.children[0].textContent.includes('Waiting')) {
+                logFeed.innerHTML = '';
+            }
+
+            logFeed.insertBefore(item, logFeed.firstChild);
+
+            if (logFeed.children.length > 20) {
+                logFeed.removeChild(logFeed.lastChild);
+            }
+        }
+
+        function forwardToAdmin(originalSignal) {
+            const location = document.getElementById('rxLocation').value.trim();
+            const userName = document.getElementById('rxUserName').value.trim();
+            const userId = document.getElementById('rxUserId').value.trim();
+            const role = document.getElementById('rxRole').value.trim();
+
+            const forwardedData = {
+                type: SIGNAL_TYPES.PATTERN_MATCH,
+                originalSignal: originalSignal,
+                receiverInfo: {
+                    location: location,
+                    userName: userName,
+                    userId: userId,
+                    role: role,
+                    deviceId: 'Device-B',
+                    matchedAt: new Date().toISOString()
+                },
+                pattern: currentPattern,
+                matchVerified: true
+            };
+
+            sharedState.broadcast(forwardedData);
+            sharedState.addToHistory(forwardedData);
+        }
+
+        function updatePattern() {
+            const newPattern = document.getElementById('targetPattern').value.trim();
+            if (newPattern) {
+                currentPattern = newPattern;
+                document.getElementById('patternConfig').textContent = newPattern;
+                document.getElementById('filterPattern').textContent = newPattern;
+
+                const config = document.getElementById('patternConfig');
+                config.style.borderColor = '#22c55e';
+                setTimeout(() => {
+                    config.style.borderColor = '#334155';
+                }, 500);
+            }
+        }
+    </script>
+</body>
+</html>
+sharedState.subscribe((data) => {
+
+    console.log(
+        'RECEIVED:',
+        data
+    );
+
+    alert(
+        'Signal received: ' +
+        data.code
+    );
+});
